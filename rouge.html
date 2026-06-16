@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ROUGE 摘要评分</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #172033;
+        --muted: #667085;
+        --line: #d8dee8;
+        --brand: #0f766e;
+        --brand-dark: #115e59;
+        --accent: #b45309;
+        --paper: #ffffff;
+        --soft: #f3f7f7;
+        --good: #15803d;
+        --mid: #b45309;
+        --low: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+        background:
+          linear-gradient(135deg, rgba(15, 118, 110, 0.09), rgba(180, 83, 9, 0.08)),
+          #f8fafc;
+      }
+
+      .hero {
+        padding: 48px 24px 26px;
+        color: #fff;
+        background:
+          linear-gradient(110deg, rgba(15, 118, 110, 0.94), rgba(17, 94, 89, 0.84)),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='440' viewBox='0 0 1200 440'%3E%3Cg fill='none' stroke='rgba(255,255,255,.22)' stroke-width='1'%3E%3Cpath d='M80 90h300M80 132h520M80 174h430M710 88h340M710 132h270M710 176h390M170 292h340M170 334h260M650 292h390M650 334h300'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: cover;
+      }
+
+      .hero-inner,
+      .workspace {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(32px, 5vw, 54px);
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        max-width: 780px;
+        margin: 16px 0 0;
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(320px, 1fr) minmax(360px, 520px);
+        gap: 20px;
+        padding: 24px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08);
+      }
+
+      .input-panel,
+      .score-panel {
+        padding: 24px;
+      }
+
+      .text-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 800;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 360px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        color: var(--ink);
+        background: var(--soft);
+        font-size: 16px;
+        line-height: 1.7;
+        outline: none;
+      }
+
+      textarea:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      select,
+      button {
+        height: 46px;
+        border-radius: 8px;
+        font-size: 15px;
+      }
+
+      select {
+        min-width: 150px;
+        border: 1px solid var(--line);
+        padding: 0 12px;
+        background: #fff;
+      }
+
+      button {
+        border: 0;
+        padding: 0 22px;
+        color: #fff;
+        background: var(--brand);
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--brand-dark);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .status {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .score-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 16px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .mode-note {
+        color: var(--accent);
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .score-list {
+        display: grid;
+        gap: 18px;
+        margin-top: 22px;
+      }
+
+      .score-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        background: #fff;
+      }
+
+      .metric-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .metric-name {
+        font-weight: 900;
+        font-size: 18px;
+      }
+
+      .metric-value {
+        color: var(--brand-dark);
+        font-weight: 900;
+        font-size: 22px;
+      }
+
+      .bar-track {
+        height: 14px;
+        overflow: hidden;
+        margin-top: 12px;
+        border-radius: 999px;
+        background: #e8eef2;
+      }
+
+      .bar-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--brand);
+        transition: width 0.35s ease;
+      }
+
+      .detail-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .empty {
+        margin-top: 24px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      @media (max-width: 980px) {
+        .workspace,
+        .text-grid {
+          grid-template-columns: 1fr;
+        }
+
+        textarea {
+          min-height: 240px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .workspace {
+          padding: 16px;
+        }
+
+        .actions,
+        .score-header {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        select,
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <h1>ROUGE 摘要评分</h1>
+        <p class="subtitle">
+          粘贴大模型生成的总结和对照文本，网页会调用本地 Python 程序计算 ROUGE-1、ROUGE-2、ROUGE-L，并用图形化进度条展示核心得分。
+        </p>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel input-panel" aria-label="文本输入">
+        <div class="text-grid">
+          <div>
+            <label for="candidate">大模型总结</label>
+            <textarea id="candidate" placeholder="在这里粘贴需要评分的大模型总结文本"></textarea>
+          </div>
+          <div>
+            <label for="reference">对照文本</label>
+            <textarea id="reference" placeholder="在这里粘贴原文或人工参考摘要"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <select id="mode" aria-label="分词模式">
+            <option value="char" selected>中文：按字计算</option>
+            <option value="word">英文/分词文本：按词计算</option>
+          </select>
+          <button id="scoreBtn" type="button">计算 ROUGE</button>
+          <span id="status" class="status">等待输入文本。</span>
+        </div>
+      </section>
+
+      <section class="panel score-panel" aria-live="polite">
+        <div class="score-header">
+          <h2>评分结果</h2>
+          <span id="modeNote" class="mode-note">F1 得分</span>
+        </div>
+        <div id="scoreList" class="score-list"></div>
+        <div id="emptyState" class="empty">
+          结果会显示为百分比。F1 是 Precision 和 Recall 的综合分数，越高表示摘要与对照文本的重合度越高。
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const candidateInput = document.querySelector("#candidate");
+      const referenceInput = document.querySelector("#reference");
+      const modeInput = document.querySelector("#mode");
+      const scoreBtn = document.querySelector("#scoreBtn");
+      const statusBox = document.querySelector("#status");
+      const scoreList = document.querySelector("#scoreList");
+      const emptyState = document.querySelector("#emptyState");
+      const modeNote = document.querySelector("#modeNote");
+
+      const metricLabels = {
+        "rouge-1": "ROUGE-1",
+        "rouge-2": "ROUGE-2",
+        "rouge-l": "ROUGE-L",
+      };
+
+      function percent(value) {
+        return `${(value * 100).toFixed(2)}%`;
+      }
+
+      function scoreColor(value) {
+        if (value >= 0.6) return "var(--good)";
+        if (value >= 0.3) return "var(--mid)";
+        return "var(--low)";
+      }
+
+      function renderScores(scores) {
+        scoreList.innerHTML = "";
+        emptyState.style.display = "none";
+
+        Object.entries(scores).forEach(([metric, values]) => {
+          const card = document.createElement("article");
+          card.className = "score-card";
+
+          const fillColor = scoreColor(values.f1);
+          card.innerHTML = `
+            <div class="metric-row">
+              <span class="metric-name">${metricLabels[metric] || metric}</span>
+              <span class="metric-value">${percent(values.f1)}</span>
+            </div>
+            <div class="bar-track" aria-hidden="true">
+              <div class="bar-fill" style="width: ${values.f1 * 100}%; background: ${fillColor};"></div>
+            </div>
+            <div class="detail-row">
+              <span>Precision：${percent(values.precision)}</span>
+              <span>Recall：${percent(values.recall)}</span>
+            </div>
+          `;
+          scoreList.appendChild(card);
+        });
+      }
+
+      scoreBtn.addEventListener("click", async () => {
+        const candidate = candidateInput.value.trim();
+        const reference = referenceInput.value.trim();
+
+        if (!candidate || !reference) {
+          statusBox.textContent = "请同时输入大模型总结和对照文本。";
+          return;
+        }
+
+        scoreBtn.disabled = true;
+        statusBox.textContent = "正在计算 ROUGE...";
+        modeNote.textContent = modeInput.value === "char" ? "按字计算" : "按词计算";
+
+        try {
+          const response = await fetch("/rouge", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              candidate,
+              reference,
+              mode: modeInput.value,
+            }),
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "ROUGE 计算失败");
+          }
+
+          renderScores(result.scores);
+          statusBox.textContent = "评分已完成。";
+        } catch (error) {
+          statusBox.textContent = error.message;
+        } finally {
+          scoreBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

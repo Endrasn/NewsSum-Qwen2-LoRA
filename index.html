@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NewsSum · 新闻摘要对比</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --paper: #ffffff;
+        --ink: #18181b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --soft-blue: #eff6ff;
+        --success: #15803d;
+        --danger: #b91c1c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 34px 0 48px;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: -0.02em;
+      }
+
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--paper);
+        box-shadow: 0 1px 2px rgba(24, 24, 27, 0.03);
+      }
+
+      .input-card {
+        padding: 22px;
+      }
+
+      .input-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+        gap: 18px;
+      }
+
+      .field-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      label {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .hint,
+      .count {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      textarea,
+      input,
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        outline: none;
+        background: #fff;
+        color: var(--ink);
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      textarea:focus,
+      input:focus,
+      select:focus {
+        border-color: #93b4f8;
+        box-shadow: 0 0 0 3px var(--soft-blue);
+      }
+
+      textarea {
+        display: block;
+        min-height: 210px;
+        padding: 14px;
+        resize: vertical;
+        line-height: 1.75;
+      }
+
+      #reference {
+        min-height: 210px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .toolbar-left,
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      button,
+      .file-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 0 15px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover,
+      .file-button:hover {
+        background: #fafafa;
+      }
+
+      .primary {
+        min-width: 132px;
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .primary:hover {
+        background: var(--accent-hover);
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.62;
+      }
+
+      #fileInput {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        opacity: 0;
+      }
+
+      details {
+        position: relative;
+      }
+
+      summary {
+        list-style: none;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .settings {
+        display: none;
+        grid-template-columns: 1.4fr 0.8fr 0.7fr 0.55fr;
+        gap: 12px;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .settings.open {
+        display: grid;
+      }
+
+      .settings label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .settings input,
+      .settings select {
+        height: 40px;
+        padding: 0 11px;
+        font-size: 13px;
+      }
+
+      .status {
+        min-height: 20px;
+        margin: 14px 2px 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .status.success {
+        color: var(--success);
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      .results {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .result-card {
+        min-height: 300px;
+        padding: 20px;
+      }
+
+      .result-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: #f4f4f5;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .summary-output {
+        min-height: 145px;
+        margin: 17px 0;
+        white-space: pre-wrap;
+        color: #27272a;
+        font-size: 15px;
+        line-height: 1.85;
+      }
+
+      .placeholder {
+        color: #a1a1aa;
+      }
+
+      .model-error {
+        color: var(--danger);
+      }
+
+      .scores {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding-top: 15px;
+        border-top: 1px solid var(--line);
+      }
+
+      .score {
+        border-radius: 9px;
+        padding: 11px 8px;
+        background: #fafafa;
+        text-align: center;
+      }
+
+      .score-name {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      .score-value {
+        display: block;
+        margin-top: 4px;
+        font-size: 18px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .score-empty {
+        grid-column: 1 / -1;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+
+      @media (max-width: 820px) {
+        .input-grid,
+        .results {
+          grid-template-columns: 1fr;
+        }
+
+        .settings {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .toolbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+          justify-content: space-between;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .shell {
+          width: min(100% - 20px, 1180px);
+          padding-top: 22px;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .input-card,
+        .result-card {
+          padding: 16px;
+        }
+
+        .settings {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div class="brand">
+          <div class="brand-mark">NS</div>
+          <div>
+            <h1>新闻摘要对比</h1>
+            <p class="subtitle">TextRank 与 Qwen2 LoRA 双模型生成及 ROUGE 评估</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="card input-card">
+        <div class="input-grid">
+          <div>
+            <div class="field-head">
+              <label for="newsText">新闻稿</label>
+              <span id="newsCount" class="count">0 字</span>
+            </div>
+            <textarea
+              id="newsText"
+              maxlength="100000"
+              placeholder="在这里粘贴需要总结的中文新闻稿..."
+            ></textarea>
+          </div>
+
+          <div>
+            <div class="field-head">
+              <label for="reference">参考摘要</label>
+              <span class="hint">ROUGE 评分必填</span>
+            </div>
+            <textarea
+              id="reference"
+              placeholder="粘贴人工摘要；留空则仅生成摘要，不评分。"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <label class="file-button" for="fileInput">导入 TXT</label>
+            <input id="fileInput" type="file" accept=".txt,text/plain" />
+            <button id="clearBtn" type="button">清空</button>
+          </div>
+          <div class="toolbar-right">
+            <details id="settingsToggle">
+              <summary class="file-button">模型设置</summary>
+            </details>
+            <button id="analyzeBtn" class="primary" type="button">生成并评估</button>
+          </div>
+        </div>
+
+        <div class="settings">
+          <div>
+            <label for="baseModel">Qwen 基座模型</label>
+            <input id="baseModel" value="Qwen/Qwen2.5-7B-Instruct" />
+          </div>
+          <div>
+            <label for="adapterPath">LoRA 路径</label>
+            <input id="adapterPath" value="adapters/qwen2.5-7b-lcsts-lora" />
+          </div>
+          <div>
+            <label for="loadIn4Bit">Qwen 精度</label>
+            <select id="loadIn4Bit">
+              <option value="false" selected>FP16 / Auto</option>
+              <option value="true">4-bit</option>
+            </select>
+          </div>
+          <div>
+            <label for="ratio">TextRank 比例</label>
+            <select id="ratio">
+              <option value="0.2">20%</option>
+              <option value="0.3" selected>30%</option>
+              <option value="0.4">40%</option>
+              <option value="0.5">50%</option>
+            </select>
+          </div>
+        </div>
+        <div id="status" class="status">输入新闻稿后即可生成。</div>
+      </section>
+
+      <section class="results" aria-live="polite">
+        <article class="card result-card">
+          <div class="result-head">
+            <h2>TextRank</h2>
+            <span class="badge">抽取式</span>
+          </div>
+          <div id="textrankSummary" class="summary-output placeholder">
+            等待生成结果。
+          </div>
+          <div id="textrankScores" class="scores">
+            <span class="score-empty">添加参考摘要后显示 ROUGE F1</span>
+          </div>
+        </article>
+
+        <article class="card result-card">
+          <div class="result-head">
+            <h2>Qwen2 LoRA</h2>
+            <span class="badge">生成式</span>
+          </div>
+          <div id="qwenSummary" class="summary-output placeholder">
+            等待生成结果。
+          </div>
+          <div id="qwenScores" class="scores">
+            <span class="score-empty">添加参考摘要后显示 ROUGE F1</span>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const newsText = document.querySelector("#newsText");
+      const reference = document.querySelector("#reference");
+      const newsCount = document.querySelector("#newsCount");
+      const fileInput = document.querySelector("#fileInput");
+      const clearBtn = document.querySelector("#clearBtn");
+      const analyzeBtn = document.querySelector("#analyzeBtn");
+      const statusBox = document.querySelector("#status");
+      const baseModel = document.querySelector("#baseModel");
+      const adapterPath = document.querySelector("#adapterPath");
+      const loadIn4Bit = document.querySelector("#loadIn4Bit");
+      const ratio = document.querySelector("#ratio");
+      const textrankSummary = document.querySelector("#textrankSummary");
+      const qwenSummary = document.querySelector("#qwenSummary");
+      const textrankScores = document.querySelector("#textrankScores");
+      const qwenScores = document.querySelector("#qwenScores");
+      const settingsToggle = document.querySelector("#settingsToggle");
+      const settingsPanel = document.querySelector(".settings");
+
+      const savedBaseModel = localStorage.getItem("newssum.baseModel");
+      const savedAdapterPath = localStorage.getItem("newssum.adapterPath");
+      const savedLoadIn4Bit = localStorage.getItem("newssum.loadIn4Bit");
+      if (savedBaseModel) baseModel.value = savedBaseModel;
+      if (savedAdapterPath) adapterPath.value = savedAdapterPath;
+      if (savedLoadIn4Bit) loadIn4Bit.value = savedLoadIn4Bit;
+
+      function updateCount() {
+        newsCount.textContent = `${newsText.value.length.toLocaleString()} 字`;
+      }
+
+      function setStatus(message, type = "") {
+        statusBox.textContent = message;
+        statusBox.className = `status ${type}`.trim();
+      }
+
+      function setOutput(element, text, type = "") {
+        element.textContent = text;
+        element.className = `summary-output ${type}`.trim();
+      }
+
+      function renderScores(container, scores) {
+        container.replaceChildren();
+        if (!scores) {
+          const empty = document.createElement("span");
+          empty.className = "score-empty";
+          empty.textContent = "未提供参考摘要，未计算 ROUGE";
+          container.append(empty);
+          return;
+        }
+
+        [
+          ["ROUGE-1", scores["rouge-1"]],
+          ["ROUGE-2", scores["rouge-2"]],
+          ["ROUGE-L", scores["rouge-l"]],
+        ].forEach(([name, score]) => {
+          const item = document.createElement("div");
+          item.className = "score";
+
+          const label = document.createElement("span");
+          label.className = "score-name";
+          label.textContent = name;
+
+          const value = document.createElement("span");
+          value.className = "score-value";
+          value.textContent = `${(score.f1 * 100).toFixed(1)}%`;
+
+          item.append(label, value);
+          container.append(item);
+        });
+      }
+
+      function setLoading() {
+        setOutput(textrankSummary, "正在运行 TextRank...", "placeholder");
+        setOutput(qwenSummary, "正在等待 Qwen2 LoRA...", "placeholder");
+        textrankScores.innerHTML = '<span class="score-empty">计算中</span>';
+        qwenScores.innerHTML = '<span class="score-empty">计算中</span>';
+      }
+
+      newsText.addEventListener("input", updateCount);
+
+      settingsToggle.addEventListener("toggle", () => {
+        settingsPanel.classList.toggle("open", settingsToggle.open);
+      });
+
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        newsText.value = await file.text();
+        updateCount();
+        setStatus(`已导入 ${file.name}`);
+      });
+
+      clearBtn.addEventListener("click", () => {
+        newsText.value = "";
+        reference.value = "";
+        fileInput.value = "";
+        updateCount();
+        setOutput(textrankSummary, "等待生成结果。", "placeholder");
+        setOutput(qwenSummary, "等待生成结果。", "placeholder");
+        renderScores(textrankScores, null);
+        renderScores(qwenScores, null);
+        setStatus("输入新闻稿后即可生成。");
+        newsText.focus();
+      });
+
+      analyzeBtn.addEventListener("click", async () => {
+        const text = newsText.value.trim();
+        if (!text) {
+          setStatus("请先输入新闻稿。", "error");
+          newsText.focus();
+          return;
+        }
+
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = "处理中...";
+        setLoading();
+        setStatus("正在生成两种摘要，请稍候...");
+
+        localStorage.setItem("newssum.baseModel", baseModel.value.trim());
+        localStorage.setItem("newssum.adapterPath", adapterPath.value.trim());
+        localStorage.setItem("newssum.loadIn4Bit", loadIn4Bit.value);
+
+        try {
+          const response = await fetch("/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text,
+              reference: reference.value.trim(),
+              base_model: baseModel.value.trim(),
+              adapter_path: adapterPath.value.trim(),
+              load_in_4bit: loadIn4Bit.value === "true",
+              ratio: Number(ratio.value),
+              max_sentences: 5,
+              max_tokens: 256,
+              mode: "char",
+            }),
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "分析失败");
+          }
+
+          const textrank = result.textrank;
+          const qwen = result.qwen;
+          setOutput(
+            textrankSummary,
+            textrank.summary || "未提取到有效摘要。",
+            textrank.summary ? "" : "placeholder",
+          );
+          renderScores(textrankScores, textrank.scores);
+
+          if (qwen.error) {
+            setOutput(qwenSummary, qwen.error, "model-error");
+            renderScores(qwenScores, null);
+            setStatus("TextRank 已完成，Qwen 模型调用失败。", "error");
+          } else {
+            setOutput(qwenSummary, qwen.summary || "模型未返回摘要。");
+            renderScores(qwenScores, qwen.scores);
+            setStatus(
+              reference.value.trim()
+                ? "摘要生成与 ROUGE 评估已完成。"
+                : "摘要已生成；添加参考摘要可计算 ROUGE。",
+              "success",
+            );
+          }
+        } catch (error) {
+          setOutput(textrankSummary, "请求失败。", "model-error");
+          setOutput(qwenSummary, "请求失败。", "model-error");
+          renderScores(textrankScores, null);
+          renderScores(qwenScores, null);
+          setStatus(error.message, "error");
+        } finally {
+          analyzeBtn.disabled = false;
+          analyzeBtn.textContent = "生成并评估";
+        }
+      });
+
+      updateCount();
+    </script>
+  </body>
+</html>

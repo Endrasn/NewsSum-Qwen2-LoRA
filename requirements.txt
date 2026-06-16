@@ -1,0 +1,6 @@
+jieba>=0.42.1,<0.43
+torch>=2.1
+transformers>=4.45
+peft>=0.11
+accelerate>=0.30
+safetensors>=0.4
