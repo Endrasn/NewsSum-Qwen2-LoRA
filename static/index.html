@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>中文新闻摘要实验台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <div>
+            <strong>NewsSum Lab</strong>
+            <small>TextRank / Qwen LoRA</small>
+          </div>
+        </div>
+        <nav class="nav-tabs" aria-label="页面导航">
+          <button class="tab active" data-page="summaryPage" type="button">摘要对比</button>
+          <button class="tab" data-page="rougePage" type="button">ROUGE 图谱</button>
+          <button class="tab" data-page="settingsPage" type="button">参数设置</button>
+        </nav>
+        <div class="side-note">
+          <span>Local only</span>
+          <p>模型与 LoRA 均从本地读取</p>
+        </div>
+      </header>
+
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">中文新闻文本自动摘要生成</p>
+            <h1>抽取式与生成式摘要对比</h1>
+          </div>
+          <button id="loadDemo" class="ghost-btn" type="button">载入示例</button>
+        </header>
+
+        <section id="summaryPage" class="page active">
+          <div class="grid two">
+            <article class="panel editor-panel">
+              <div class="panel-title">
+                <div>
+                  <span>01</span>
+                  <h2>新闻正文</h2>
+                </div>
+                <small id="sourceCount">0 字</small>
+              </div>
+              <textarea id="sourceText" placeholder="粘贴或输入中文新闻正文..."></textarea>
+            </article>
+
+            <article class="panel editor-panel">
+              <div class="panel-title">
+                <div>
+                  <span>02</span>
+                  <h2>总结示例 / 参考摘要</h2>
+                </div>
+                <small>用于 ROUGE 评分</small>
+              </div>
+              <textarea id="referenceText" placeholder="输入人工参考摘要，第二页会据此计算三项 ROUGE 指标..."></textarea>
+            </article>
+          </div>
+
+          <div class="runbar">
+            <div>
+              <strong>运行摘要生成</strong>
+              <p>先运行 TextRank，再运行本地 Qwen LoRA；也可只运行其中一种方法。</p>
+            </div>
+            <div class="run-actions">
+              <button id="runTextrank" type="button">运行 TextRank</button>
+              <button id="runQwen" class="primary-btn" type="button">运行 Qwen LoRA</button>
+              <button id="runAll" class="primary-btn warm" type="button">全部运行</button>
+            </div>
+          </div>
+
+          <div class="grid two results-grid">
+            <article class="result-card">
+              <div class="result-head">
+                <div>
+                  <span>Extractive</span>
+                  <h2>TextRank 摘要</h2>
+                </div>
+                <button class="mini-btn" data-score="textrank" type="button">评分</button>
+              </div>
+              <pre id="textrankResult">等待运行</pre>
+            </article>
+
+            <article class="result-card model-card">
+              <div class="result-head">
+                <div>
+                  <span>Generative</span>
+                  <h2>Qwen2.5-7B-Instruct + LoRA</h2>
+                </div>
+                <button class="mini-btn" data-score="qwen" type="button">评分</button>
+              </div>
+              <pre id="qwenResult">等待运行</pre>
+            </article>
+          </div>
+        </section>
+
+        <section id="rougePage" class="page">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">ROUGE-1 / ROUGE-2 / ROUGE-L</p>
+              <h2>三角评分图</h2>
+            </div>
+            <button id="scoreBoth" class="primary-btn" type="button">重新计算 ROUGE</button>
+          </div>
+
+          <div class="chart-layout">
+            <article class="panel chart-panel">
+              <svg id="rougeChart" viewBox="0 0 520 460" role="img" aria-label="ROUGE 三角评分图"></svg>
+            </article>
+            <article class="panel">
+              <div class="panel-title">
+                <div>
+                  <span>Score</span>
+                  <h2>指标明细</h2>
+                </div>
+              </div>
+              <div id="metrics" class="metrics">
+                <p class="empty">运行摘要并填写参考摘要后，在这里查看评分。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="settingsPage" class="page">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">可调参数</p>
+              <h2>TextRank 与模型推理设置</h2>
+            </div>
+            <button id="resetSettings" class="ghost-btn" type="button">恢复默认</button>
+          </div>
+
+          <div class="grid two">
+            <article class="panel settings-card">
+              <div class="panel-title">
+                <div>
+                  <span>TextRank</span>
+                  <h2>抽取式摘要</h2>
+                </div>
+              </div>
+              <label>
+                摘要句数
+                <input id="sentenceCount" type="number" min="1" max="10" value="4" />
+              </label>
+              <label>
+                选句比例
+                <input id="textrankRatio" type="range" min="0.1" max="0.8" step="0.05" value="0.25" />
+                <output id="textrankRatioValue">0.25</output>
+              </label>
+            </article>
+
+            <article class="panel settings-card">
+              <div class="panel-title">
+                <div>
+                  <span>Qwen LoRA</span>
+                  <h2>生成式摘要</h2>
+                </div>
+              </div>
+              <label>
+                基础模型目录
+                <input id="modelPath" value="models/Qwen2.5-7B-Instruct" />
+              </label>
+              <label>
+                LoRA 目录
+                <input id="adapterPath" value="." />
+              </label>
+              <label>
+                最大输出 token
+                <input id="maxTokens" type="number" min="64" max="1024" value="220" />
+              </label>
+              <label>
+                temperature
+                <input id="temperature" type="range" min="0" max="1.2" step="0.05" value="0.2" />
+                <output id="temperatureValue">0.20</output>
+              </label>
+              <label>
+                top_p
+                <input id="topP" type="range" min="0.1" max="1" step="0.05" value="0.9" />
+                <output id="topPValue">0.90</output>
+              </label>
+              <label>
+                repetition_penalty
+                <input id="repetitionPenalty" type="range" min="1" max="1.4" step="0.01" value="1.05" />
+                <output id="repetitionPenaltyValue">1.05</output>
+              </label>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
