@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Local model and training outputs. Publish curated adapters under adapters/.
+LoRA/
+models/
+checkpoints/
+saves/
+
+# Large model artifacts should be added explicitly with Git LFS when needed.
+*.pt
+*.pth
+*.bin
+*.safetensors
+!adapters/**/*.safetensors
